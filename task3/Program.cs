@@ -133,15 +133,12 @@ public class BankAccount
 
   private string ContactDetails()
   {
-    switch(PreferredContactMethod)
+    return PreferredContactMethod switch
     {
-      case "email":
-        return Email;
-      case "phone":
-        return PhoneNumber;
-      default:
-        throw new Exception("Unrecognised contact method");
-    }
+      "email" => Email,
+      "phone" => PhoneNumber,
+      _ => throw new Exception("Unrecognised contact method")
+    };
   }
 }
 
