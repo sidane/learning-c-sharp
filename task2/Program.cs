@@ -1,8 +1,43 @@
 ﻿BankAccount joeBankAccount = new BankAccount("Joe Bloggs", 100m);
+BankAccount peterBankAccount = new BankAccount("Peter Parker", 400m);
+BankAccount janeBankAccount = new BankAccount("Jane Doe", 0m);
 Bank bank = new Bank();
-bank.AddAccount(joeBankAccount);
-BankAccount foundAccount = bank.FindAccount("Joe Bloggs2");
-Console.WriteLine($"Found accounts for {foundAccount?.Name}");
+
+BankAccount? richestBankAccount;
+
+try {
+  richestBankAccount = bank.GetRichestAccount();
+  Console.WriteLine($"The richest bank account is {richestBankAccount?.Name} with £{richestBankAccount?.Balance}");
+}
+catch (NoBankAccountsException ex)
+{
+  Console.WriteLine(ex.Message);
+}
+
+try {
+  bank.AddAccount(joeBankAccount);
+  bank.AddAccount(peterBankAccount);
+  bank.AddAccount(peterBankAccount);
+}
+catch (DuplicateAccountException ex)
+{
+  Console.WriteLine(ex.Message);
+}
+Console.WriteLine($"Bank total deposits: £{bank.TotalDeposits()}");
+
+BankAccount? foundAccount = bank.FindAccount("Joe Bloggs");
+
+if (foundAccount is not null)
+{
+  Console.WriteLine($"Found account for {foundAccount.Name} with balance £{foundAccount.Balance}");
+  Console.WriteLine($"Withdrawing £10 from {foundAccount.Name}");
+  foundAccount.Withdraw(10m);
+  Console.WriteLine($"{foundAccount.Name} account balance is now £{foundAccount.Balance}");
+}
+
+richestBankAccount = bank.GetRichestAccount();
+
+Console.WriteLine($"The richest bank account is {richestBankAccount?.Name} with £{richestBankAccount?.Balance}");
 
 public class Bank
 {
@@ -13,15 +48,16 @@ public class Bank
 
   public void AddAccount(BankAccount account)
   {
+    if (FindAccount(account.Name) is not null) {
+      throw new DuplicateAccountException(account);
+    }
+
     Accounts.Add(account);
   }
 
-  public BankAccount FindAccount(string accountName)
+  public BankAccount? FindAccount(string accountName)
   {
-    return Accounts.FirstOrDefault(
-      a => a.Name == accountName,
-      new NullBankAccount("No account", 0m)
-    );
+    return Accounts.FirstOrDefault(a => a.Name == accountName);
   }
 
   public decimal TotalDeposits()
@@ -29,9 +65,16 @@ public class Bank
     return Accounts.Sum(a => a.Balance);
   }
 
-  public BankAccount? GetRichestAccount()
+  public BankAccount GetRichestAccount()
   {
-    return Accounts.MaxBy(a => a.Balance);
+    var account = Accounts.MaxBy(a => a.Balance);
+
+    if (account is null)
+    {
+      throw new NoBankAccountsException();
+    }
+
+    return account;
   }
 }
 
@@ -61,10 +104,16 @@ public class BankAccount
   }
 }
 
-public class NullBankAccount : BankAccount
+public class DuplicateAccountException : Exception
 {
-  public NullBankAccount(string accountHolderName, decimal initialBalance)
-    :base("No account", 0m) {}
+  public DuplicateAccountException(BankAccount account)
+    : base($"Failed to add account, one already exists for {account.Name}") {}
+}
+
+public class NoBankAccountsException : Exception
+{
+  public NoBankAccountsException()
+    :base($"There are currently no bank accounts") {}
 }
 
 public class InsufficientFundsException : Exception
