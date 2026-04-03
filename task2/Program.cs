@@ -16,7 +16,9 @@ catch (NoBankAccountsException ex)
 
 try {
   bank.AddAccount(joeBankAccount);
+  Console.WriteLine($"Added account for {joeBankAccount.Name}");
   bank.AddAccount(peterBankAccount);
+  Console.WriteLine($"Added account for {peterBankAccount.Name}");
   bank.AddAccount(peterBankAccount);
 }
 catch (DuplicateAccountException ex)
